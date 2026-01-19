@@ -7,61 +7,105 @@
 
 <style>
 body {
-    background: linear-gradient(135deg, #00b14f 0%, #005a28 100%);
+    background: linear-gradient(135deg, #e8f5ee 0%, #f6fbf8 100%);
     font-family: 'Prompt', sans-serif;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     padding: 20px;
-    color: white;
+    color: #2f3e34;
 }
+
 .container {
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
+    background: #ffffff;
+    border-radius: 22px;
     padding: 30px;
     width: 100%;
     max-width: 900px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
+
+h1 {
+    color: #2e7d5b;
+}
+
 textarea {
     width: 100%;
     min-height: 130px;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 15px;
-    border: none;
+    border: 1px solid #cfe8dc;
+    background: #f9fdfb;
+    font-size: 14px;
 }
+
+textarea:focus {
+    outline: none;
+    border-color: #8fd3b8;
+    box-shadow: 0 0 0 3px rgba(143,211,184,0.25);
+}
+
 button {
     margin-top: 15px;
-    padding: 12px 30px;
+    padding: 12px 34px;
     border-radius: 25px;
     border: none;
-    background: #00e676;
+    background: linear-gradient(135deg, #7fd1ae, #9be2c3);
+    color: #1f3d2f;
     font-weight: bold;
     cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
+
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
     gap: 15px;
     margin-top: 15px;
 }
+
 .product-card {
-    background: rgba(255,255,255,0.2);
-    border-radius: 12px;
-    padding: 15px;
+    background: #f2faf6;
+    border-radius: 14px;
+    padding: 16px;
     text-align: center;
+    border: 1px solid #d9efe5;
 }
+
+.product-card strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #2e7d5b;
+}
+
+.product-card a {
+    color: #3aa37a;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.product-card a:hover {
+    text-decoration: underline;
+}
+
 .invalid-box {
     margin-top: 20px;
-    background: rgba(255,0,0,0.2);
-    padding: 15px;
-    border-radius: 12px;
+    background: #fff3f3;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #f2caca;
+    color: #9b2c2c;
 }
-a { color: white; }
+
 .note {
     font-size: 13px;
-    opacity: 0.85;
-    margin-top: 10px;
+    color: #6b8076;
+    margin-top: 12px;
 }
 </style>
 </head>
