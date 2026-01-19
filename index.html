@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotus's ID Checker</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* นำเทคนิค Glassmorphism ที่คุณชอบมาใช้ */
+        body {
+            background: linear-gradient(135deg, #00b14f 0%, #005a28 100%);
+            font-family: 'Prompt', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            padding: 40px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .upload-area:hover { background: rgba(255, 255, 255, 0.05); }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .product-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .product-card a {
+            color: #fff;
+            text-decoration: underline;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🛒 Lotus's ID Checker</h1>
+    <p>อัปโหลดไฟล์ Excel เพื่อสร้างรายการตรวจสอบสินค้า</p>
+    
+    <div class="upload-area" id="drop-zone">
+        ลากไฟล์ Excel มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
+        <input type="file" id="file-input" hidden accept=".xlsx, .xls">
+    </div>
+
+    <div id="status"></div>
+    <div class="product-grid" id="result-grid"></div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const resultGrid = document.getElementById('result-grid');
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+    function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+            
+            // สมมติว่าเลขสินค้าอยู่ในคอลัมน์แรก
+            const productIDs = jsonData.flat().filter(id => id && !isNaN(id));
+            displayProducts(productIDs);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function displayProducts(ids) {
+        resultGrid.innerHTML = '';
+        document.getElementById('status').innerText = `พบสินค้าทั้งหมด ${ids.length} รายการ`;
+        
+        ids.forEach(id => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div>รหัส: <strong>${id}</strong></div>
+                <a href="https://www.lotuss.com/th/product/${id}" target="_blank">เปิดหน้าเว็บจริง</a>
+            `;
+            resultGrid.appendChild(card);
+        });
+    }
+</script>
+
+</body>
+</html>
