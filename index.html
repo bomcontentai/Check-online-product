@@ -3,116 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lotus's ID Checker</title>
+<title>Lotus's Image Probe Checker</title>
 
 <style>
 body {
-    background: linear-gradient(135deg, #e8f5ee 0%, #f6fbf8 100%);
+    background: linear-gradient(135deg, #eef7f1 0%, #f7fbf8 100%);
     font-family: 'Prompt', sans-serif;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     padding: 20px;
-    color: #2f3e34;
+    color: #2e3a2f;
 }
-
 .container {
     background: #ffffff;
-    border-radius: 22px;
+    border-radius: 20px;
     padding: 30px;
     width: 100%;
     max-width: 900px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
-
-h1 {
-    color: #2e7d5b;
-}
-
 textarea {
     width: 100%;
     min-height: 130px;
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 15px;
-    border: 1px solid #cfe8dc;
-    background: #f9fdfb;
-    font-size: 14px;
+    border: 1px solid #cfd8dc;
 }
-
-textarea:focus {
-    outline: none;
-    border-color: #8fd3b8;
-    box-shadow: 0 0 0 3px rgba(143,211,184,0.25);
-}
-
 button {
     margin-top: 15px;
-    padding: 12px 34px;
+    padding: 12px 30px;
     border-radius: 25px;
     border: none;
-    background: linear-gradient(135deg, #7fd1ae, #9be2c3);
-    color: #1f3d2f;
+    background: #81c784;
     font-weight: bold;
     cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-
-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-}
-
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
     gap: 15px;
     margin-top: 15px;
 }
-
 .product-card {
-    background: #f2faf6;
-    border-radius: 14px;
-    padding: 16px;
+    background: #f1f8e9;
+    border-radius: 12px;
+    padding: 15px;
     text-align: center;
-    border: 1px solid #d9efe5;
 }
-
-.product-card strong {
-    display: block;
-    margin-bottom: 6px;
-    color: #2e7d5b;
+.product-card img {
+    width: 100%;
+    max-height: 140px;
+    object-fit: contain;
+    margin-bottom: 8px;
 }
-
-.product-card a {
-    color: #3aa37a;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-.product-card a:hover {
-    text-decoration: underline;
-}
-
 .invalid-box {
     margin-top: 20px;
-    background: #fff3f3;
-    padding: 16px;
-    border-radius: 14px;
-    border: 1px solid #f2caca;
-    color: #9b2c2c;
+    background: #ffebee;
+    padding: 15px;
+    border-radius: 12px;
 }
-
+a { color: #2e7d32; }
 .note {
     font-size: 13px;
-    color: #6b8076;
-    margin-top: 12px;
+    opacity: 0.85;
+    margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-    <h1>🛒 Lotus's ID Checker</h1>
+    <h1>🛒 Lotus's Image Probe Checker</h1>
     <p>กรอกรหัสสินค้า (คั่นด้วย Enter / , / เว้นวรรค)</p>
 
     <textarea id="input"></textarea>
@@ -120,17 +81,17 @@ button:hover {
 
     <div id="status" style="margin-top:15px;"></div>
 
-    <h3 style="margin-top:30px;">🔍 รหัสสินค้าที่สามารถเปิดไปตรวจสอบได้</h3>
+    <h3 style="margin-top:30px;">✅ พบรูปสินค้า</h3>
     <div class="product-grid" id="valid"></div>
 
     <div id="invalidBox" class="invalid-box" style="display:none;">
-        <h3>⚠️ รหัสที่รูปแบบไม่ถูกต้อง / ใช้งานไม่ได้</h3>
+        <h3>❌ ไม่พบรูปสินค้า</h3>
         <div id="invalidList"></div>
     </div>
 
     <div class="note">
-        * ระบบนี้ไม่ได้ตรวจสอบว่าสินค้ามีอยู่จริงบนเว็บหรือไม่  
-        เป็นเพียงเครื่องมือช่วยเปิดลิงก์เพื่อตรวจสอบต่อ
+        * ตรวจสอบจากการโหลดรูปสินค้าบน CDN ของ Lotus’s โดยตรง  
+        ถ้ามีรูปอย่างน้อย 1 path จะถือว่าพบ
     </div>
 </div>
 
@@ -146,44 +107,70 @@ function search() {
     invalidList.innerHTML = '';
     invalidBox.style.display = 'none';
 
-    const tokens = input
-        .split(/[\s,]+/)
+    const ids = [...new Set(
+        input.split(/[\s,]+/)
         .map(t => t.trim())
-        .filter(t => t !== '');
+        .filter(t => /^\d+$/.test(t))
+    )];
 
-    const valid = [];
-    const invalid = [];
-    const seen = new Set();
+    // 🔑 โฟลเดอร์ที่พบบ่อย (เพิ่มได้ภายหลัง)
+    const FOLDERS = [
+        '86593',
+        '86594',
+        '86595',
+        '86596'
+    ];
 
-    tokens.forEach(id => {
-        if (!/^\d+$/.test(id)) {
-            invalid.push(id);
-        } else if (seen.has(id)) {
-            invalid.push(id + ' (ซ้ำ)');
-        } else {
-            seen.add(id);
-            valid.push(id);
+    let found = [];
+    let notFound = [];
+    let checked = 0;
+
+    ids.forEach(id => {
+        let resolved = false;
+        let tried = 0;
+
+        FOLDERS.forEach(folder => {
+            const imgUrl = `https://o2o-static.lotuss.com/products/${folder}/${id}.jpg`;
+            const img = new Image();
+            img.src = imgUrl;
+
+            img.onload = () => {
+                if (resolved) return;
+                resolved = true;
+                found.push(id);
+                validGrid.innerHTML += `
+                    <div class="product-card">
+                        <img src="${imgUrl}">
+                        <strong>${id}</strong><br>
+                        <a href="https://www.lotuss.com/th/product/${id}" target="_blank">
+                            เปิดหน้าเว็บสินค้า
+                        </a>
+                    </div>
+                `;
+                done();
+            };
+
+            img.onerror = () => {
+                tried++;
+                if (tried === FOLDERS.length && !resolved) {
+                    notFound.push(id);
+                    done();
+                }
+            };
+        });
+    });
+
+    function done() {
+        checked++;
+        if (checked === ids.length) {
+            if (notFound.length > 0) {
+                invalidBox.style.display = 'block';
+                invalidList.innerText = notFound.join(', ');
+            }
+            status.innerText =
+                `พบสินค้า ${found.length} | ไม่พบสินค้า ${notFound.length}`;
         }
-    });
-
-    valid.forEach(id => {
-        validGrid.innerHTML += `
-            <div class="product-card">
-                <strong>${id}</strong><br>
-                <a href="https://www.lotuss.com/th/product/${id}" target="_blank">
-                    เปิดหน้าเว็บสินค้า
-                </a>
-            </div>
-        `;
-    });
-
-    if (invalid.length > 0) {
-        invalidBox.style.display = 'block';
-        invalidList.innerText = invalid.join(', ');
     }
-
-    status.innerText =
-        `รหัสที่ตรวจสอบได้ ${valid.length} | รหัสที่ใช้ไม่ได้ ${invalid.length}`;
 }
 </script>
 </body>
