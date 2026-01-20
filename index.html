@@ -3,172 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lotus's Image Probe Checker</title>
+<title>Lotus's ID Checker</title>
 
 <style>
 body {
-    background: linear-gradient(135deg, #eef7f1 0%, #f7fbf8 100%);
+    background: linear-gradient(135deg, #e8f5ee 0%, #f7faf8 100%);
     font-family: 'Prompt', sans-serif;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     padding: 20px;
-    color: #2e3a2f;
+    color: #2e4d3f;
 }
+
 .container {
-    background: #ffffff;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 30px;
     width: 100%;
     max-width: 900px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
 }
+
 textarea {
     width: 100%;
     min-height: 130px;
     border-radius: 12px;
     padding: 15px;
-    border: 1px solid #cfd8dc;
+    border: 1px solid #cfe5d8;
+    font-size: 15px;
 }
+
 button {
     margin-top: 15px;
     padding: 12px 30px;
     border-radius: 25px;
     border: none;
-    background: #81c784;
+    background: #7fd3a6;
+    color: #114d32;
     font-weight: bold;
     cursor: pointer;
 }
+
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
     gap: 15px;
     margin-top: 15px;
 }
+
 .product-card {
-    background: #f1f8e9;
-    border-radius: 12px;
+    background: #f1faf5;
+    border-radius: 14px;
     padding: 15px;
     text-align: center;
+    border: 1px solid #dcefe4;
 }
+
 .product-card img {
     width: 100%;
-    max-height: 140px;
-    object-fit: contain;
-    margin-bottom: 8px;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
+
 .invalid-box {
     margin-top: 20px;
-    background: #ffebee;
+    background: #fff1f1;
     padding: 15px;
     border-radius: 12px;
+    border: 1px solid #ffd6d6;
 }
-a { color: #2e7d32; }
+
+a {
+    color: #1b6b4f;
+    text-decoration: underline;
+}
+
 .note {
     font-size: 13px;
-    opacity: 0.85;
-    margin-top: 10px;
+    opacity: 0.8;
+    margin-top: 15px;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-    <h1>🛒 Lotus's Image Probe Checker</h1>
+    <h1>🛒 Lotus’s O2O SKU Checker</h1>
     <p>กรอกรหัสสินค้า (คั่นด้วย Enter / , / เว้นวรรค)</p>
 
     <textarea id="input"></textarea>
     <button onclick="search()">ตรวจสอบ</button>
 
-    <div id="status" style="margin-top:15px;"></div>
+    <div id="status" style="margin-top:15px;font-weight:bold;"></div>
 
-    <h3 style="margin-top:30px;">✅ พบรูปสินค้า</h3>
+    <h3 style="margin-top:30px;">🔍 สินค้าที่ตรวจพบ</h3>
     <div class="product-grid" id="valid"></div>
 
     <div id="invalidBox" class="invalid-box" style="display:none;">
-        <h3>❌ ไม่พบรูปสินค้า</h3>
+        <h3>⚠️ ไม่พบสินค้า</h3>
         <div id="invalidList"></div>
     </div>
 
     <div class="note">
-        * ตรวจสอบจากการโหลดรูปสินค้าบน CDN ของ Lotus’s โดยตรง  
-        ถ้ามีรูปอย่างน้อย 1 path จะถือว่าพบ
+        * ระบบใช้การตรวจสอบจากไฟล์รูปสินค้าโดยตรง<br>
+        * หากพบรูป แปลว่ามีสินค้านั้นอยู่ในระบบ
     </div>
 </div>
 
 <script>
 function search() {
     const input = document.getElementById('input').value;
-    const validGrid = document.getElementById('valid');
+    const grid = document.getElementById('valid');
     const invalidBox = document.getElementById('invalidBox');
     const invalidList = document.getElementById('invalidList');
     const status = document.getElementById('status');
 
-    validGrid.innerHTML = '';
+    grid.innerHTML = '';
     invalidList.innerHTML = '';
     invalidBox.style.display = 'none';
 
-    const ids = [...new Set(
-        input.split(/[\s,]+/)
-        .map(t => t.trim())
-        .filter(t => /^\d+$/.test(t))
-    )];
+    const ids = input
+        .split(/[\s,]+/)
+        .map(i => i.trim())
+        .filter(i => /^\d+$/.test(i));
 
-    // 🔑 โฟลเดอร์ที่พบบ่อย (เพิ่มได้ภายหลัง)
-    const FOLDERS = [
-        '86593',
-        '86594',
-        '86595',
-        '86596'
-    ];
-
-    let found = [];
+    let found = 0;
     let notFound = [];
-    let checked = 0;
 
     ids.forEach(id => {
-        let resolved = false;
-        let tried = 0;
+        const img = new Image();
+        const imgUrl = `https://o2o-static.lotuss.com/products/86593/${id}.jpg`;
+        const productUrl = `https://www.lotuss.com/th/product/${id}`;
 
-        FOLDERS.forEach(folder => {
-            const imgUrl = `https://o2o-static.lotuss.com/products/${folder}/${id}.jpg`;
-            const img = new Image();
-            img.src = imgUrl;
+        img.onload = () => {
+            found++;
+            grid.innerHTML += `
+                <div class="product-card">
+                    <img src="${imgUrl}" alt="product ${id}">
+                    <strong>${id}</strong><br>
+                    <a href="${productUrl}" target="_blank">
+                        เปิดหน้าเว็บสินค้า
+                    </a>
+                </div>
+            `;
+            updateStatus();
+        };
 
-            img.onload = () => {
-                if (resolved) return;
-                resolved = true;
-                found.push(id);
-                validGrid.innerHTML += `
-                    <div class="product-card">
-                        <img src="${imgUrl}">
-                        <strong>${id}</strong><br>
-                        <a href="https://www.lotuss.com/th/product/${id}" target="_blank">
-                            เปิดหน้าเว็บสินค้า
-                        </a>
-                    </div>
-                `;
-                done();
-            };
+        img.onerror = () => {
+            notFound.push(id);
+            updateStatus();
+        };
 
-            img.onerror = () => {
-                tried++;
-                if (tried === FOLDERS.length && !resolved) {
-                    notFound.push(id);
-                    done();
-                }
-            };
-        });
+        img.src = imgUrl;
     });
 
-    function done() {
-        checked++;
-        if (checked === ids.length) {
-            if (notFound.length > 0) {
-                invalidBox.style.display = 'block';
-                invalidList.innerText = notFound.join(', ');
-            }
-            status.innerText =
-                `พบสินค้า ${found.length} | ไม่พบสินค้า ${notFound.length}`;
+    function updateStatus() {
+        status.innerText =
+            `พบสินค้า ${found} | ไม่พบสินค้า ${notFound.length}`;
+
+        if (notFound.length > 0) {
+            invalidBox.style.display = 'block';
+            invalidList.innerText = notFound.join(', ');
         }
     }
 }
