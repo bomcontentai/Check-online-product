@@ -86,17 +86,29 @@ a {
     margin-top: 15px;
 }
 </style>
+
+<!-- XLSX Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 </head>
 
 <body>
 <div class="container">
     <h1>🛒 Lotus’s O2O SKU Checker</h1>
-    <p>กรอกรหัสสินค้า (คั่นด้วย Enter / , / เว้นวรรค)</p>
+    <p>กรอกรหัสสินค้า SKU (คั่นรหัสด้วย Enter / , / เว้นวรรค)</p>
 
     <textarea id="input"></textarea>
     <button onclick="search()">ตรวจสอบ</button>
 
-    <div id="status" style="margin-top:15px;font-weight:bold;"></div>
+    <div id="resultBar" style="margin-top:15px;display:flex;align-items:center;gap:15px;">
+        <div id="status" style="font-weight:bold;"></div>
+
+        <button id="downloadBtn"
+            onclick="downloadExcel()"
+            style="display:none;background:#FF0073;color:#FFFFFF;">
+            ดาวน์โหลด Excel แค่ Touch ก็ สัมผัสปอย
+        </button>
+    </div>
 
     <h3 style="margin-top:30px;">🔍 สินค้าที่ตรวจพบ</h3>
     <div class="product-grid" id="valid"></div>
@@ -113,16 +125,24 @@ a {
 </div>
 
 <script>
+
+let globalNotFound = [];
+
 function search() {
+
     const input = document.getElementById('input').value;
     const grid = document.getElementById('valid');
     const invalidBox = document.getElementById('invalidBox');
     const invalidList = document.getElementById('invalidList');
     const status = document.getElementById('status');
+    const downloadBtn = document.getElementById('downloadBtn');
 
     grid.innerHTML = '';
     invalidList.innerHTML = '';
     invalidBox.style.display = 'none';
+    downloadBtn.style.display = 'none';
+
+    globalNotFound = [];
 
     const ids = input
         .split(/[\s,]+/)
@@ -130,9 +150,9 @@ function search() {
         .filter(i => /^\d+$/.test(i));
 
     let found = 0;
-    let notFound = [];
 
     ids.forEach(id => {
+
         const img = new Image();
         const imgUrl = `https://o2o-static.lotuss.com/products/86593/${id}.jpg`;
         const productUrl = `https://www.lotuss.com/th/product/${id}`;
@@ -152,7 +172,7 @@ function search() {
         };
 
         img.onerror = () => {
-            notFound.push(id);
+            globalNotFound.push(id);
             updateStatus();
         };
 
@@ -160,15 +180,40 @@ function search() {
     });
 
     function updateStatus() {
-        status.innerText =
-            `พบสินค้า ${found} | ไม่พบสินค้า ${notFound.length}`;
 
-        if (notFound.length > 0) {
+        status.innerText =
+            `พบสินค้า ${found} | ไม่พบสินค้า ${globalNotFound.length}`;
+
+        if (globalNotFound.length > 0) {
             invalidBox.style.display = 'block';
-            invalidList.innerText = notFound.join(', ');
+            invalidList.innerText = globalNotFound.join(', ');
+            downloadBtn.style.display = 'inline-block';
+        } else {
+            downloadBtn.style.display = 'none';
         }
     }
 }
+
+function downloadExcel() {
+
+    if (globalNotFound.length === 0) {
+        alert("ไม่มีรายการที่ไม่พบสินค้า");
+        return;
+    }
+
+    const data = globalNotFound.map((id, index) => ({
+        "ลำดับ": index + 1,
+        "SKU ที่ไม่พบ": id
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "NotFound");
+
+    XLSX.writeFile(workbook, "Lotus_NotFound_SKU.xlsx");
+}
+
 </script>
+
 </body>
 </html>
